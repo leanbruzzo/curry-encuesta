@@ -109,6 +109,38 @@
     .dot:nth-child(3) { animation-delay: .3s; }
     @keyframes bop { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
 
+    .opts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-self: flex-start;
+      max-width: 90%;
+      animation: fi 0.3s ease;
+    }
+
+    .opt-btn {
+      background: #fff;
+      border: 1.5px solid #1D9E75;
+      color: #1D9E75;
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .opt-btn:hover {
+      background: #1D9E75;
+      color: #fff;
+    }
+
+    .opt-btn:disabled {
+      border-color: #ccc;
+      color: #ccc;
+      cursor: not-allowed;
+    }
+
     .fin {
       background: #fff;
       border-radius: 14px;
@@ -228,6 +260,7 @@
   let isDone = false;
   let turnCount = 0;
   const TOTAL_TURNS = 18;
+  const sessionId = Math.random().toString(36).slice(2, 10);
 
   function scrollBot() { body.scrollTop = body.scrollHeight; }
 
@@ -237,6 +270,7 @@
     d.textContent = text;
     body.appendChild(d);
     scrollBot();
+    return d;
   }
 
   function showTyping() {
@@ -258,11 +292,34 @@
     pfill.style.width = pct + '%';
   }
 
+  function disableCurrentOptions() {
+    document.querySelectorAll('.opt-btn').forEach(btn => btn.disabled = true);
+  }
+
+  function showOptions(options) {
+    const container = document.createElement('div');
+    container.className = 'opts';
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => {
+        disableCurrentOptions();
+        handleSend(opt);
+      });
+      container.appendChild(btn);
+    });
+    body.appendChild(container);
+    scrollBot();
+  }
+
   function showEnd() {
     pfill.style.width = '100%';
     hdrSub.textContent = 'Encuesta completada';
     inp.disabled = true;
     snd.disabled = true;
+    disableCurrentOptions();
+
     const fin = document.createElement('div');
     fin.className = 'fin fade';
     fin.innerHTML = `
@@ -276,12 +333,25 @@
     `;
     body.appendChild(fin);
     scrollBot();
+
+    saveToSheet();
   }
 
   function detectEnd(text) {
     const endings = ['gracias por participar', 'gracias por tu tiempo', 'cerramos la encuesta', 'eso es todo', 'terminamos la encuesta', 'completamos la encuesta'];
-    const lower = text.toLowerCase();
-    return endings.some(e => lower.includes(e));
+    return endings.some(e => text.toLowerCase().includes(e));
+  }
+
+  async function saveToSheet() {
+    try {
+      await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history, sessionId })
+      });
+    } catch (e) {
+      console.error('Error guardando encuesta:', e);
+    }
   }
 
   async function sendToAPI(userMsg) {
@@ -297,7 +367,7 @@
     if (!res.ok) throw new Error(data.error || 'Error de servidor');
 
     history.push({ role: 'assistant', content: data.reply });
-    return data.reply;
+    return { reply: data.reply, options: data.options };
   }
 
   async function handleSend(userText) {
@@ -319,14 +389,20 @@
     showTyping();
 
     try {
-      const reply = await sendToAPI(isInit ? null : userText);
+      const { reply, options } = await sendToAPI(isInit ? null : userText);
       removeTyping();
+
       if (reply) {
         addBubble(reply, 'bot');
+
         if (detectEnd(reply)) {
           isDone = true;
           setTimeout(showEnd, 800);
           return;
+        }
+
+        if (options && options.length > 0) {
+          showOptions(options);
         }
       }
     } catch (e) {

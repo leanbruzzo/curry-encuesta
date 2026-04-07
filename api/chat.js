@@ -62,6 +62,26 @@ REGLAS DE ADAPTACIÓN:
 - Cuando termines todos los bloques, agradecé la participación y cerrá con calidez. Incluí la frase "¡Gracias por participar!" en el mensaje de cierre.
 - No reveles que hay "bloques" ni que seguís una estructura. Tiene que sentirse como una charla natural.
 
+FORMATO DE RESPUESTA — MUY IMPORTANTE:
+Siempre respondé con un JSON válido con esta estructura:
+{
+  "message": "tu mensaje aquí",
+  "options": ["Opción 1", "Opción 2"]
+}
+
+El campo "options" es opcional. Incluilo SOLO cuando la pregunta tenga respuestas cerradas predefinidas. Ejemplos de cuándo incluir options:
+- Tipo de mascota → ["Perro", "Gato", "Ambos", "Otra"]
+- Nivel de actividad → ["Sedentario", "Moderado", "Muy activo"]
+- Tipo de alimentación → ["Balanceado", "Natural/casero", "Mixto", "BARF", "Otro"]
+- Criterio de elección → ["Precio", "Ingredientes", "Recomendación del vet", "Marca", "Otro"]
+- Canal de compra → ["Veterinaria", "Supermercado", "Online", "Varios"]
+- Lectura de etiqueta → ["Sí", "No", "A veces"]
+- Disposición al cambio → ["Sí definitivamente", "Tal vez", "No por ahora"]
+
+No incluyas options para preguntas abiertas como: cantidad de mascotas, edad, peso, marca, gasto en pesos, snacks específicos, frenos al cambio, qué falta en el mercado.
+
+No agregues ningún texto fuera del JSON. Solo el JSON.
+
 Empezá presentándote brevemente y arrancá con la primera pregunta.`;
 
   try {
@@ -74,6 +94,7 @@ Empezá presentándote brevemente y arrancá con la primera pregunta.`;
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         max_tokens: 1000,
+        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           ...messages
@@ -87,7 +108,13 @@ Empezá presentándote brevemente y arrancá con la primera pregunta.`;
       return res.status(response.status).json({ error: data.error?.message || 'Error de API' });
     }
 
-    return res.status(200).json({ reply: data.choices?.[0]?.message?.content || '' });
+    const raw = data.choices?.[0]?.message?.content || '{}';
+    const parsed = JSON.parse(raw);
+
+    return res.status(200).json({
+      reply: parsed.message || '',
+      options: parsed.options || null
+    });
 
   } catch (error) {
     return res.status(500).json({ error: 'Error interno del servidor' });
