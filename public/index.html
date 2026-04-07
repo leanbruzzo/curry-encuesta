@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Curry — Encuesta sobre alimentación de mascotas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .phone {
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      overflow: hidden;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      height: 680px;
+    }
+
+    .hdr {
+      background: #1D9E75;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .av {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .av svg { width: 22px; height: 22px; }
+
+    .hdr-info { flex: 1; }
+    .hdr-name { font-size: 15px; font-weight: 600; color: #fff; }
+    .hdr-sub { font-size: 11px; color: rgba(255,255,255,0.78); margin-top: 1px; }
+
+    .pbar { height: 3px; background: rgba(255,255,255,0.2); flex-shrink: 0; }
+    .pfill { height: 100%; background: rgba(255,255,255,0.85); transition: width 0.5s ease; width: 0%; }
+
+    .body {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      background: #f7f9fb;
+    }
+
+    .bub {
+      max-width: 83%;
+      padding: 9px 13px;
+      font-size: 14px;
+      line-height: 1.55;
+      border-radius: 16px;
+    }
+
+    .bub.bot {
+      background: #fff;
+      border: 1px solid #e8eaed;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+      color: #1a1a1a;
+    }
+
+    .bub.usr {
+      background: #1D9E75;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+    }
+
+    .bub.typing {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 14px 16px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #aaa;
+      animation: bop 1s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: .15s; }
+    .dot:nth-child(3) { animation-delay: .3s; }
+    @keyframes bop { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+    .fin {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px 16px;
+      text-align: center;
+      align-self: center;
+      border: 1px solid #e8eaed;
+      margin-top: 8px;
+      width: 90%;
+    }
+
+    .fin-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #E1F5EE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+
+    .fin-icon svg { width: 24px; height: 24px; }
+    .fin h3 { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; }
+    .fin p { font-size: 13px; color: #666; line-height: 1.5; }
+
+    .inp-row {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid #eee;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .inp-row input {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 9px 15px;
+      font-size: 14px;
+      color: #1a1a1a;
+      background: #f7f9fb;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .inp-row input:focus { border-color: #1D9E75; }
+
+    .snd {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1D9E75;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .snd:hover { background: #178a65; }
+    .snd:disabled { background: #ccc; cursor: not-allowed; }
+    .snd svg { width: 15px; height: 15px; }
+
+    .fade { animation: fi 0.3s ease; }
+    @keyframes fi { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+    @media (max-width: 460px) {
+      body { padding: 0; align-items: flex-start; }
+      .phone { border-radius: 0; height: 100vh; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="hdr">
+    <div class="av">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2C8 2 5 5 5 8v1a7 7 0 0 0 14 0V8c0-3-3-6-7-6z"/>
+        <circle cx="9" cy="9" r="0.8" fill="white" stroke="none"/>
+        <circle cx="15" cy="9" r="0.8" fill="white" stroke="none"/>
+        <path d="M5 8C3.5 6.5 3 4 4 4s2 1.5 2 3M19 8c1.5-1.5 2-4 1-4s-2 1.5-2 3"/>
+        <path d="M9 13.5s1 1.5 3 1.5 3-1.5 3-1.5"/>
+      </svg>
+    </div>
+    <div class="hdr-info">
+      <div class="hdr-name">Curry</div>
+      <div class="hdr-sub" id="hdr-sub">Investigación sobre alimentación de mascotas</div>
+    </div>
+  </div>
+  <div class="pbar"><div class="pfill" id="pfill"></div></div>
+  <div class="body" id="body"></div>
+  <div class="inp-row">
+    <input type="text" id="inp" placeholder="Escribí tu respuesta..." />
+    <button class="snd" id="snd">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  const body = document.getElementById('body');
+  const inp = document.getElementById('inp');
+  const snd = document.getElementById('snd');
+  const pfill = document.getElementById('pfill');
+  const hdrSub = document.getElementById('hdr-sub');
+
+  let history = [];
+  let isLoading = false;
+  let isDone = false;
+  let turnCount = 0;
+  const TOTAL_TURNS = 18;
+
+  function scrollBot() { body.scrollTop = body.scrollHeight; }
+
+  function addBubble(text, cls) {
+    const d = document.createElement('div');
+    d.className = `bub ${cls} fade`;
+    d.textContent = text;
+    body.appendChild(d);
+    scrollBot();
+  }
+
+  function showTyping() {
+    const d = document.createElement('div');
+    d.className = 'bub bot typing fade';
+    d.id = 'typing';
+    d.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    body.appendChild(d);
+    scrollBot();
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  function updateProgress() {
+    const pct = Math.min(Math.round((turnCount / TOTAL_TURNS) * 100), 95);
+    pfill.style.width = pct + '%';
+  }
+
+  function showEnd() {
+    pfill.style.width = '100%';
+    hdrSub.textContent = 'Encuesta completada';
+    inp.disabled = true;
+    snd.disabled = true;
+    const fin = document.createElement('div');
+    fin.className = 'fin fade';
+    fin.innerHTML = `
+      <div class="fin-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h3>¡Gracias por participar!</h3>
+      <p>Tus respuestas nos ayudan a construir algo mejor para tus mascotas.</p>
+    `;
+    body.appendChild(fin);
+    scrollBot();
+  }
+
+  function detectEnd(text) {
+    const endings = ['gracias por participar', 'gracias por tu tiempo', 'cerramos la encuesta', 'eso es todo', 'terminamos la encuesta', 'completamos la encuesta'];
+    const lower = text.toLowerCase();
+    return endings.some(e => lower.includes(e));
+  }
+
+  async function sendToAPI(userMsg) {
+    if (userMsg) history.push({ role: 'user', content: userMsg });
+
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error de servidor');
+
+    history.push({ role: 'assistant', content: data.reply });
+    return data.reply;
+  }
+
+  async function handleSend(userText) {
+    if (isLoading || isDone) return;
+
+    const isInit = userText === '__INIT__';
+    if (!isInit && !userText.trim()) return;
+
+    if (!isInit) {
+      addBubble(userText, 'usr');
+      turnCount++;
+      updateProgress();
+    }
+
+    inp.value = '';
+    inp.disabled = true;
+    snd.disabled = true;
+    isLoading = true;
+    showTyping();
+
+    try {
+      const reply = await sendToAPI(isInit ? null : userText);
+      removeTyping();
+      if (reply) {
+        addBubble(reply, 'bot');
+        if (detectEnd(reply)) {
+          isDone = true;
+          setTimeout(showEnd, 800);
+          return;
+        }
+      }
+    } catch (e) {
+      removeTyping();
+      addBubble('Hubo un problema de conexión. Intentá de nuevo.', 'bot');
+    }
+
+    isLoading = false;
+    if (!isDone) {
+      inp.disabled = false;
+      snd.disabled = false;
+      inp.focus();
+    }
+  }
+
+  snd.addEventListener('click', () => handleSend(inp.value.trim()));
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleSend(inp.value.trim()); });
+
+  handleSend('__INIT__');
+</script>
+</body>
+</html>
